@@ -111,6 +111,59 @@ Após limpar, recarregue a página e a tela de login aparecerá normalmente.
 
 ---
 
+## Inspecionando o banco de dados no MySQL Workbench
+
+Abra o MySQL Workbench conectado ao `localhost` e execute as queries abaixo para verificar os dados.
+
+### Ver todas as transações do usuário de teste
+
+```sql
+SELECT * FROM gestao_financeira.Transaction
+WHERE userId = (SELECT id FROM gestao_financeira.User WHERE email = 'test@gmail.com');
+```
+
+### Ver transações com o nome da categoria
+
+```sql
+SELECT t.id, t.description, t.amount, t.type, t.date, c.name AS categoria
+FROM gestao_financeira.Transaction t
+JOIN gestao_financeira.Category c ON t.categoryId = c.id
+WHERE t.userId = (SELECT id FROM gestao_financeira.User WHERE email = 'test@gmail.com')
+ORDER BY t.date DESC;
+```
+
+### Ver o saldo total por tipo (receita x despesa)
+
+```sql
+SELECT type, SUM(amount) AS total
+FROM gestao_financeira.Transaction
+WHERE userId = (SELECT id FROM gestao_financeira.User WHERE email = 'test@gmail.com')
+GROUP BY type;
+```
+
+### Ver o saldo mensal de 2026
+
+```sql
+SELECT
+  MONTH(date) AS mes,
+  SUM(CASE WHEN type = 'income'  THEN amount ELSE 0 END) AS receitas,
+  SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) AS despesas,
+  SUM(CASE WHEN type = 'income'  THEN amount ELSE -amount END) AS saldo
+FROM gestao_financeira.Transaction
+WHERE userId = (SELECT id FROM gestao_financeira.User WHERE email = 'test@gmail.com')
+  AND YEAR(date) = 2026
+GROUP BY MONTH(date)
+ORDER BY mes;
+```
+
+### Ver todas as categorias cadastradas
+
+```sql
+SELECT * FROM gestao_financeira.Category ORDER BY type, name;
+```
+
+---
+
 ## Testando a API com o Postman
 
 A pasta `postman/` contém uma collection pronta para importar no Postman com todos os endpoints configurados e autenticação automática.
